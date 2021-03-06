@@ -44,9 +44,12 @@ type expr =
        | App of loc * expr * expr 
        | Let of loc * var * type_expr * expr * expr
        | LetFun of loc * var * lambda * type_expr * expr
+       | LetTupleFun of loc * var * ((vardef list) * type_expr * expr) * type_expr * expr
        | LetRecFun of loc * var * lambda * type_expr * expr
 
 and lambda = var * type_expr * expr 
+and vardef = var * type_expr
+
 val loc_of_expr : expr -> loc 
 val string_of_loc : loc -> string 
 

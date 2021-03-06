@@ -83,11 +83,20 @@ expr:
 | LET IDENT COLON texpr EQUAL expr IN expr END           { Past.Let (get_loc(), $2, $4, $6, $8) }
 | LET IDENT LPAREN IDENT COLON texpr RPAREN COLON texpr EQUAL expr IN expr END 
                                      { Past.LetFun (get_loc(), $2, ($4, $6, $11), $9, $13) }
+| LET IDENT LPAREN varlist RPAREN COLON texpr EQUAL expr IN expr END 
+                                     { Past.LetTupleFun (get_loc(), $2, ($4, $7, $9), $7, $11) }									 
 | CASE expr OF 
       INL LPAREN IDENT COLON texpr RPAREN ARROW expr 
   BAR INR LPAREN IDENT COLON texpr RPAREN  ARROW expr 
   END 
                                      { Past.Case (get_loc(), $2, ($6, $8, $11), ($15, $17, $20)) }
+
+var:
+|   IDENT COLON texpr                { ($1, $3) }
+
+varlist:
+|   var                              { [$1] }
+|   var COMMA varlist                { $1 :: $3 }
 
 exprlist:
 |   expr                             { [$1] }

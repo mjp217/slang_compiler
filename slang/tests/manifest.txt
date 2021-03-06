@@ -45,4 +45,6 @@ seq2 101
 ref1 101
 ref2 101
 ref3 101
+rev1 34343
+rev2 5656
 while 3

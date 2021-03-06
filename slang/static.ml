@@ -47,6 +47,7 @@ let make_inr loc t1 (e, t2)          = (Inr(loc, t1, e), TEunion(t1, t2))
 let make_lambda loc x t1 (e, t2)     = (Lambda(loc, (x, t1, e)), TEarrow(t1, t2))
 let make_ref loc (e, t)              = (Ref(loc, e), TEref t)
 let make_letfun loc f x t1 (body, t2) (e, t)    = (LetFun(loc, f, (x, t1, body), t2, e), t)
+let make_lettuplefun loc f x t1 (body, t2) (e, t)    = (LetTupleFun(loc, f, (x, t1, body), t2, e), t)
 let make_letrecfun loc f x t1 (body, t2) (e, t) = (LetRecFun(loc, f, (x, t1, body), t2, e), t)
 
 let make_let loc x t (e1, t1) (e2, t2)  = 
@@ -180,6 +181,7 @@ let rec  infer env e =
           with _ -> let env3 = (f, TEarrow(t1, t2)) :: env2 in 
                         make_letrecfun loc f x t1 (infer env3 body) p 
          )
+    | LetTupleFun(loc, f, (x, t1, body), t2, e) -> (LetTupleFun(loc, f, (x, t1, body), t2, e), t2)
     | LetRecFun(_, _, _, _, _)  -> internal_error "LetRecFun found in parsed AST" 
 
 and infer_seq loc env el = 

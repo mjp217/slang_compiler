@@ -48,9 +48,11 @@ type expr =
        | App of loc * expr * expr
        | Let of loc * var * type_expr * expr * expr
        | LetFun of loc * var * lambda * type_expr * expr
+       | LetTupleFun of loc * var * ((vardef list) * type_expr * expr) * type_expr * expr
        | LetRecFun of loc * var * lambda * type_expr * expr
 
 and lambda = var * type_expr * expr 
+and vardef = var * type_expr
 
 let  loc_of_expr = function 
     | Unit loc                      -> loc 
@@ -76,6 +78,7 @@ let  loc_of_expr = function
     | App(loc, _, _)                -> loc 
     | Let(loc, _, _, _, _)          -> loc 
     | LetFun(loc, _, _, _, _)       -> loc 
+    | LetTupleFun(loc, _, _, _, _)  -> loc 
     | LetRecFun(loc, _, _, _, _)    -> loc 
 
 
@@ -160,6 +163,9 @@ let rec pp_expr ppf = function
     | LetFun(_, f, (x, t1, e1), t2, e2)     -> 
          fprintf ppf "@[let %a(%a : %a) : %a =@ %a @ in %a @ end@]" 
                      fstring f fstring x  pp_type t1 pp_type t2 pp_expr e1 pp_expr e2
+    | LetTupleFun(_, f, (x, t1, e1), t2, e2)     -> 
+         fprintf ppf "@[let %a(%a) : %a =@ %a @ in %a @ end@]" 
+                     fstring f pp_type t1 pp_type t2 pp_expr e1 pp_expr e2
     | LetRecFun(_, f, (x, t1, e1), t2, e2)     -> 
          fprintf ppf "@[letrec %a(%a : %a) : %a =@ %a @ in %a @ end@]" 
                      fstring f fstring x  pp_type t1 pp_type t2 pp_expr e1 pp_expr e2
@@ -235,6 +241,12 @@ let rec string_of_expr = function
              mk_con "" [x; string_of_type t1; string_of_expr e1]; 
              string_of_type t2; 
              string_of_expr e2]
+    | LetTupleFun(_, f, (x, t1, e1), t2, e2)      -> 
+          mk_con "LetFun" [
+             f; 
+             mk_con "" [string_of_type t1; string_of_expr e1]; 
+             string_of_type t2; 
+             string_of_expr e2]			 
     | LetRecFun(_, f, (x, t1, e1), t2, e2)   -> 
           mk_con "LetRecFun" [
              f; 
