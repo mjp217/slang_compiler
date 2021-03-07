@@ -1,1 +1,1 @@
-# cc2020_cl_cam_ac_uk
+This is a clone of Tim Griffin's [Slang Compiler](https://github.com/Timothy-G-Griffin/cc_cl_cam_ac_uk) used in the University of Cambridge compilers course, to facilitate some supervision work.
