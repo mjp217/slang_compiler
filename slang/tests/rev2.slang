@@ -1,4 +1,4 @@
-let rev (x : int, y : int) : int * int  = (y, x)
+let rev (x : int, y : int, z: int) : int * int * int = (y, z, x)
 in 
-rev (21, 3)
+rev (21, 4, 3)
 end
