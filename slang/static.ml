@@ -181,6 +181,9 @@ let rec  infer env e =
           with _ -> let env3 = (f, TEarrow(t1, t2)) :: env2 in 
                         make_letrecfun loc f x t1 (infer env3 body) p 
          )
+	
+	(* TODO: complete proper static type checking for function with tuple of arguments *)
+	
     | LetTupleFun(loc, f, (x, t1, body), t2, e) -> (LetTupleFun(loc, f, (x, t1, body), t2, e), t2)
     | LetRecFun(_, _, _, _, _)  -> internal_error "LetRecFun found in parsed AST" 
 
