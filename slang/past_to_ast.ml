@@ -66,48 +66,43 @@ let rec translate_t_lambda = function(tuples, body_expr, p) -> match tuples with
     | [(x, _)]     -> Ast.App(Ast.Lambda(x, body_expr), p)
 	| (x, _)::rest -> translate_t_lambda(rest, Ast.App(Ast.Lambda(x, body_expr), Ast.Fst(p)), Ast.Snd(p))
 
-let rec translate_expr_map = function (e, map) -> match e with
+let rec translate_expr = function 
     | Past.Unit _            -> Ast.Unit
     | Past.What _            -> Ast.UnaryOp(Ast.READ, Ast.Unit)
-    | Past.Var(_, x)         -> map x
+    | Past.Var(_, x)         -> Ast.Var x 
     | Past.Integer(_, n)     -> Ast.Integer n
     | Past.Boolean(_, b)     -> Ast.Boolean b
-    | Past.UnaryOp(_, op, e) -> Ast.UnaryOp(translate_uop op, translate_expr_map(e, map))
-    | Past.Op(_, e1, op, e2) -> Ast.Op(translate_expr_map(e1, map), translate_bop op, translate_expr_map(e2, map))
-    | Past.If(_, e1, e2, e3) -> Ast.If(translate_expr_map(e1, map), translate_expr_map(e2, map), translate_expr_map(e3,map))
-    | Past.Pair(_, e1, e2)   -> Ast.Pair(translate_expr_map(e1, map), translate_expr_map(e2, map))
-    | Past.Fst(_, e)         -> Ast.Fst(translate_expr_map(e, map))
-    | Past.Snd(_, e)         -> Ast.Snd(translate_expr_map(e, map))
-    | Past.Inl(_, _, e)       -> Ast.Inl(translate_expr_map(e, map))
-    | Past.Inr(_, _, e)       -> Ast.Inr(translate_expr_map(e, map))
+    | Past.UnaryOp(_, op, e) -> Ast.UnaryOp(translate_uop op, translate_expr e)
+    | Past.Op(_, e1, op, e2) -> Ast.Op(translate_expr e1, translate_bop op, translate_expr e2)
+    | Past.If(_, e1, e2, e3) -> Ast.If(translate_expr e1, translate_expr e2, translate_expr e3)
+    | Past.Pair(_, e1, e2)   -> Ast.Pair(translate_expr e1, translate_expr e2)
+    | Past.Fst(_, e)         -> Ast.Fst(translate_expr e)
+    | Past.Snd(_, e)         -> Ast.Snd(translate_expr e)
+    | Past.Inl(_, _, e)       -> Ast.Inl(translate_expr e)
+    | Past.Inr(_, _, e)       -> Ast.Inr(translate_expr e)
     | Past.Case(_, e, l1, l2) -> 
-         Ast.Case(translate_expr_map(e, map), translate_lambda(l1, map), translate_lambda(l2, map)) 
-    | Past.Lambda(_, l)      -> Ast.Lambda (translate_lambda (l, map))
-    | Past.App(_, e1, e2)    -> Ast.App(translate_expr_map(e1, map), translate_expr_map(e2, map))
+         Ast.Case(translate_expr e, translate_lambda l1, translate_lambda l2) 
+    | Past.Lambda(_, l)      -> Ast.Lambda (translate_lambda l)
+    | Past.App(_, e1, e2)    -> Ast.App(translate_expr e1, translate_expr e2)
     (*
        Replace "let" with abstraction and application. For example, translate 
         "let x = e1 in e2 end" to "(fun x -> e2) e1" 
     *) 
     | Past.Let(_, x, _, e1, e2) -> 
-         Ast.App(Ast.Lambda(x, translate_expr_map(e2, map)), translate_expr_map(e1, map))
+         Ast.App(Ast.Lambda(x, translate_expr e2), translate_expr e1)
     | Past.LetFun(_, f, l, _, e)     -> 
-         Ast.LetFun(f, translate_lambda(l, map), translate_expr_map(e, map))
-    | Past.LetTupleFun(_, f, l, _, e)     -> 
-         Ast.LetFun(f, translate_tuple_lambda(f, l, map), translate_expr_map(e, map))
+         Ast.LetFun(f, translate_lambda l, translate_expr e)
     | Past.LetRecFun(_, f, l, _, e)     -> 
-         Ast.LetRecFun(f, translate_lambda(l, map), translate_expr_map(e, map))
+         Ast.LetRecFun(f, translate_lambda l, translate_expr e)
 
-    | Past.Seq(_, e1) -> Ast.Seq(List.map (function x -> translate_expr_map(x, map)) e1)
-    | Past.While(_, e1, e2) -> Ast.While(translate_expr_map(e1, map), translate_expr_map(e2, map))
-    | Past.Ref(_, e) -> Ast.Ref(translate_expr_map(e, map))
-    | Past.Deref(_, e) -> Ast.Deref(translate_expr_map(e, map))
-    | Past.Assign(_, e1, e2) -> Ast.Assign(translate_expr_map(e1, map), translate_expr_map(e2, map))
+    | Past.LetTupleFun(_, f, l, _, e)     -> 
+         Ast.LetFun(f, translate_tuple_lambda(f, l), translate_expr e)
 
-and translate_lambda = function((x, _, body), map) -> (x, translate_expr_map(body, map))
-and translate_tuple_lambda = function(f, (tuples, _, body), map) -> (f, translate_t_lambda(tuples, translate_expr_map(body, map), Ast.Var(f)))
+    | Past.Seq(_, el) -> Ast.Seq(List.map translate_expr el)
+    | Past.While(_, e1, e2) -> Ast.While(translate_expr e1, translate_expr e2)
+    | Past.Ref(_, e) -> Ast.Ref(translate_expr e)
+    | Past.Deref(_, e) -> Ast.Deref(translate_expr e)
+    | Past.Assign(_, e1, e2) -> Ast.Assign(translate_expr e1, translate_expr e2)
 
-let update_map map (k, v) = function lookup -> if lookup = k then v else map lookup
-
-let empty_map = function lookup -> Ast.Var lookup
-
-let rec translate_expr e = translate_expr_map (e, empty_map)
+and translate_lambda (x, _, body) = (x, translate_expr body) 
+and translate_tuple_lambda = function(f, (tuples, _, body)) -> (f, translate_t_lambda(tuples, translate_expr body, Ast.Var(f)))
